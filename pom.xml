@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.xm</groupId>
-	<artifactId>coder</artifactId>
+	<artifactId>coder-xiaoming</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>coder</name>
 	<description>Xiaoming's project demo</description>
@@ -56,6 +56,9 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<executable>true</executable>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
