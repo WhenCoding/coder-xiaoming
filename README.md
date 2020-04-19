@@ -11,5 +11,5 @@
 
 ##### 20200413
 
-[Java中的try，如何开启新姿势？](https://mynamecoder.com/p/44518.html)
+[「日常开发」Java中的try，如何开启新姿势？](https://mynamecoder.com/p/44518.html)
 
