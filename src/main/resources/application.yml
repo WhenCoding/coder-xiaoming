@@ -1,0 +1,8 @@
+spring:
+  profiles:
+    active: dev
+  freemarker:
+    template-loader-path: classpath:/templates
+    cache: false # 开发环境缓存关闭，生产环境可以打开
+    suffix: xml
+    charset: UTF-8
