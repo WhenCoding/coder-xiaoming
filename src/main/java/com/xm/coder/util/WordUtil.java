@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import sun.misc.BASE64Decoder;
 
 import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -78,22 +80,19 @@ public class WordUtil {
      * @param dataMap 传入的数据
      * @param docTemplate docx模板文件名称，该文件可以直接使用解压软件打开docx文件，复制word/document.xml文件内容进行修改
      * @param documentXmlRels 图片引用配置文件名
-     * @return
      */
-    public static void createDocx(Map dataMap,String docTemplate,String documentXmlRels) throws FileNotFoundException {
+    public static void createDocx(Map dataMap, String docTemplate, String documentXmlRels) throws FileNotFoundException {
         ZipOutputStream zipout = null;
+        int len = -1;
+        byte[] buffer = new byte[1024];
         int year = LocalDate.now().getYear();
         int monthValue = LocalDate.now().getMonthValue();
         StringBuilder sb = new StringBuilder();
         sb.append(separator).append(year).append(separator).append(monthValue).append(separator).append(Instant.now().toEpochMilli()).append(fileSuffix);
         String path = sb.toString();
-        // outputStream 输出流可以自己定义 浏览器或者文件输出流
-        OutputStream os = new FileOutputStream("your export path");
+        OutputStream os = new FileOutputStream("/Users/xin/Desktop/test.docx");
+        zipout = new ZipOutputStream(os);
         try(InputStream inputStream = WordUtil.class.getClassLoader().getResourceAsStream("templates/docxTemplate.docx");) {
-            //图片配置文件模板
-            ByteArrayInputStream documentXmlRelsInput =getFreemarkerContentInputStream(dataMap, documentXmlRels);
-            //内容模板
-            ByteArrayInputStream documentInput = getFreemarkerContentInputStream(dataMap, docTemplate);
             File docxFile = new File("docxTemplate.docx");
             FileUtils.copyToFile(inputStream,docxFile);
             if (!docxFile.exists()) {
@@ -101,10 +100,34 @@ public class WordUtil {
             }
             ZipFile zipFile = new ZipFile(docxFile);
             Enumeration<? extends ZipEntry> zipEntrys = zipFile.entries();
-            zipout = new ZipOutputStream(os);
+            // 写入并处理图片
+            List<Map<String, Object>> picList = (List<Map<String, Object>>) dataMap.get("picList");
+            for (Map<String, Object> pic : picList) {
+                String imageName = pic.get("name").toString().split("\\.")[0];
+                ZipEntry next = new ZipEntry("word" + separator + "media" + separator + pic.get("name"));
+                zipout.putNextEntry(new ZipEntry(next.toString()));
+                BASE64Decoder decoder = new BASE64Decoder();
+                byte[] bytes1 = decoder.decodeBuffer(pic.get("code").toString());
+                InputStream in  = new ByteArrayInputStream(bytes1);
+                while ((len = in.read(buffer)) != -1) {
+                    zipout.write(buffer, 0, len);
+                }
+                in.close();
+                // 处理图片宽高
+                InputStream imageImputStream  = new ByteArrayInputStream(bytes1);
+                BufferedImage a = ImageIO.read(imageImputStream);
+                int width = a.getWidth();
+                int height = a.getHeight();
+                dataMap.put(imageName+"Width",width);
+                dataMap.put(imageName+"Height",height);
+                log.info("{}:{},{}:{}",imageName+"Width",width,imageName+"Height",height);
+                imageImputStream.close();
+            }
+            //图片配置文件模板
+            ByteArrayInputStream documentXmlRelsInput =getFreemarkerContentInputStream(dataMap, documentXmlRels);
+            //内容模板
+            ByteArrayInputStream documentInput = getFreemarkerContentInputStream(dataMap, docTemplate);
             //开始覆盖文档------------------
-            int len = -1;
-            byte[] buffer = new byte[1024];
             while (zipEntrys.hasMoreElements()) {
                 ZipEntry next = zipEntrys.nextElement();
                 InputStream is = zipFile.getInputStream(next);
@@ -132,18 +155,6 @@ public class WordUtil {
                     }
                 }
             }
-            //写入图片
-            List<Map<String, Object>> picList = (List<Map<String, Object>>) dataMap.get("picList");
-            for (Map<String, Object> pic : picList) {
-                ZipEntry next = new ZipEntry("word" + separator + "media" + separator + pic.get("name"));
-                zipout.putNextEntry(new ZipEntry(next.toString()));
-                InputStream in = toInputStream(pic.get("code").toString());
-                while ((len = in.read(buffer)) != -1) {
-                    zipout.write(buffer, 0, len);
-                }
-                in.close();
-            }
-
         } catch (Exception e) {
             log.error("word导出失败:",e);
         }finally {
