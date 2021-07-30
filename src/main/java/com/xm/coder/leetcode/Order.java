@@ -49,4 +49,24 @@ public class Order {
         }
     }
 
+    /**
+     * 插入排序
+     */
+    @Test
+    public void ins() {
+        int[] nums = {3, 44, 38, 5, 47, 15, 36, 26, 27, 2, 46, 4, 19, 50, 48};
+        //将a[]按升序排列
+        int N = nums.length;
+        for (int i = 1; i < N; i++) {
+            //将a[i]插入到a[i-1]，a[i-2]，a[i-3]……之中
+            for (int j = i; j >= 1; j--) {
+                if(nums[j - 1] > nums[j]){
+                    int temp = nums[j];
+                    nums[j] = nums[j - 1];
+                    nums[j - 1] = temp;
+                }
+            }
+        }
+    }
+
 }
